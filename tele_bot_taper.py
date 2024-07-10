@@ -5,7 +5,7 @@ from db import is_new_user,users
 from time import sleep
 from random import choice, randint
 
-bot = telebot.TeleBot(SeyKeys)
+
 class Player:
     
     def __init__(self) -> None:
@@ -29,16 +29,17 @@ class Enemy:
         self.name = choice(list(self.dic.keys()))
         self.hp = self.dic[self.name][0]
         self.damage = self.dic[self.name][1]
-
-player_new = Player()
-enemy = Enemy()
-dic = {'огонь':(120,50),
-        'вода':(100,70),
-        'воздух':(110,60),
-        'земля':(90,80),}
-super_enemys = {'misha':(150,50),
-               'pvp':(200,30),
-               'банить':(500,7)}
+if __name__ == '__main__':
+    bot = telebot.TeleBot(SeyKeys)
+    player_new = Player()
+    enemy = Enemy()
+    dic = {'огонь':(120,50),
+            'вода':(100,70),    
+            'воздух':(110,60),
+            'земля':(90,80),}
+    super_enemys = {'misha':(150,50),
+                'pvp':(200,30),
+                'банить':(500,7)}
 
 def reg_1(msg: Message):
     
@@ -98,6 +99,7 @@ def callback(call):
             bot.send_message(call.message.chat.id,"Вы отдохнули.")
         else:
             bot.send_message(call.message.chat.id,"Вам спать не положено.")
+        menu(call.message)
     if call.data == '0':
         menu(call.message)
     if call.data.startswith("trener"):
