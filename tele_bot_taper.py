@@ -42,23 +42,28 @@ if __name__ == '__main__':
                 'банить':(500,7)}
 
 def reg_1(msg: Message):
-    
+    global player_new
+    player_new = Player()
     bot.send_message(msg.chat.id, 'Добро пожаловать!\nКак тебя зовут?')
     bot.register_next_step_handler(msg, reg_2)
     
 def reg_2(msg:Message):
-    player_new.name = msg.text
+    if player_new.name == '':
+        player_new.name = msg.text
     kb = telebot.types.ReplyKeyboardMarkup(True,False)
     kb.row('Земля','Вода')
     kb.row('Огонь','Воздух')
     bot.send_message(msg.chat.id,"Выберите стихию: ",reply_markup=kb)
     bot.register_next_step_handler(msg,reg_3)
 def reg_3(msg: Message):
-    player_new.power=msg.text.lower()
-    clear = telebot.types.ReplyKeyboardRemove()
-    users.write([msg.chat.id,player_new.name,player_new.power,player_new.dic[player_new.power][0],player_new.dic[player_new.power][1],False])
-    bot.send_message(msg.chat.id, f'Вы вошли в игру под именем {player_new.name}\nДля дальнейшей игры нажмите /menu',reply_markup=clear)
-    
+    text = msg.text.lower()
+    if text in list(dic.keys()):
+        player_new.power=text
+        clear = telebot.types.ReplyKeyboardRemove()
+        users.write([msg.chat.id,player_new.name,player_new.power,player_new.dic[player_new.power][0],player_new.dic[player_new.power][1],False])
+        bot.send_message(msg.chat.id, f'Вы вошли в игру под именем {player_new.name}\nДля дальнейшей игры нажмите /menu',reply_markup=clear)
+    else:
+        reg_2(msg)
 
 @bot.message_handler(['start'])
 def start(msg: Message):
@@ -81,22 +86,25 @@ def start(msg: Message):
         kb.row(IB(f"Поспать — +{high}❤️", callback_data=f"sleep_{high}"))
     if len(kb.keyboard) == 0:
         kb.row(IB('Спать не хочется', callback_data= '0'))
-    bot.send_message(msg.chat.id, "Выбери, сколько будешь отдыхать:", reply_markup=kb)
+    bot.send_message(msg.chat.id, "Выберите, сколько будешь отдыхать:", reply_markup=kb)
     
 @bot.callback_query_handler(lambda call:True)
 def callback(call):
     global enemy
     play = users.read('userid',call.message.chat.id)
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=None)
     if call.data.startswith("sleep_"):
+        bot.send_message(call.message.chat.id,'Необходимо подождать пока идёт отдых\nМожете пойти попить чаю.')
         play = users.read("userid", call.message.chat.id)
         if play[3]< dic[play[2]][0]:
             text = call.data[6:]
             play[3] += int(text)
             if play[3] > dic[play[2]][0]:
                 play[3] = dic[play[2]][0]
-            users.write(play)
+            
             sleep(int(text))
             bot.send_message(call.message.chat.id,"Вы отдохнули.")
+            users.write(play)
         else:
             bot.send_message(call.message.chat.id,"Вам спать не положено.")
         menu(call.message)
@@ -107,8 +115,8 @@ def callback(call):
             enemy = Enemy()
             kb = telebot.types.InlineKeyboardMarkup()
             kb.row(IB('Атаковать',callback_data='atack'),IB('Попробовать сбежать',callback_data='run'))
-            bot.send_message(call.message.chat.id,f'Тебе встретился {enemy.name}\n у него здоровья {enemy.hp} и урона {enemy.damage}\n'
-                            f'Что будешь делать?',reply_markup=kb)
+            bot.send_message(call.message.chat.id,f'Вам встретился {enemy.name}\n у него здоровья {enemy.hp} и урона {enemy.damage}\n'
+                            f'Что будете делать?',reply_markup=kb)
         else:
             bot.send_message(call.message.chat.id,'Идите отдыхать. Так как вы мертвы! \n/home')
     if call.data.startswith("power"): #встреча с супер врагом
